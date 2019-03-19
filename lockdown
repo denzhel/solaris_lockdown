@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Set the encrypted password
+lock_unlock_pass="f2dc0119c9dac46f49d3b7d0be1f61adf7619b770ff076fb11a2f61ff3fcba6b68d224588c4983670da31b33b4efabd448e38a2fda508622cc33ff8304ddf49c"
+
+# Check the current state
+if [ $(cat $HOME/.hstate) == "unlocked" ] ;
+then
+	echo "Locking"
+	chmod +x /etc/disable_right_click.sh
+	mv $HOME/.gconf.unlocked $HOME/.gconf
+	echo locked > $HOME/.hstate
+	svcadm restart cde-login
+else
+	# Ask the user for the password and save it into a variable
+	read -s -p "Password for desktop unlock: " pass
+
+	# Check the given password againts the hard coded one and act
+	if [ $(echo $pass | digest -a sha512) == "$lock_unlock_pass" ] ;
+	then
+		echo "Unlocking"
+		chmod -x /etc/disable_right_click.sh
+		mv $HOME/.gconf $HOME/.gconf.unlocked
+		echo unlocked > $HOME/.hstate
+		svcadm restart cde-login
+	else
+		echo "Wrong Password"
+		sleep 4
+	fi
+fi
